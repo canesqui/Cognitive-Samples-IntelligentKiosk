@@ -105,14 +105,7 @@ namespace IntelligentKioskSample.Views
                 await this.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
                 {
                     if (!this.isProcessingPhoto)
-                    {
-                        if (DateTime.Now.Hour != this.demographics.StartTime.Hour)
-                        {
-                            // We have been running through the hour. Reset the data...
-                            await this.ResetDemographicsData();
-                            this.UpdateDemographicsUI();
-                        }
-
+                    {                        
                         this.isProcessingPhoto = true;
                         if (this.cameraControl.NumFacesOnLastFrame == 0)
                         {
