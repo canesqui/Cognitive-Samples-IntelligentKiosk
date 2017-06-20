@@ -279,7 +279,7 @@ namespace ServiceHelpers
                             }
                             else
                             {
-                                result.Add(new IdentifiedPerson { Person = person, Confidence = match.Candidates[0].Confidence, FaceId = match.FaceId });
+                                result.Add(new IdentifiedPerson { Person = person, Confidence = match.Candidates[0].Confidence, FaceId = match.FaceId });                                
                             }
                         }
                     }

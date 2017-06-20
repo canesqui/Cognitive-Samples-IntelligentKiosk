@@ -134,6 +134,13 @@ namespace IntelligentKioskSample.Views
             }
         }
 
+        private async Task SaveIdentifiedFace(ImageAnalyzer e)
+        {         
+            var stream = await Util.ConvertTo(e.Data);
+            var writableBitmap = await Util.FromStreamtoWritableBitmap(stream);
+            await Util.SaveBitmapToFileAsync(writableBitmap);
+        }
+
         private async Task ProcessCameraCapture(ImageAnalyzer e)
         {
             if (e == null)
@@ -184,6 +191,7 @@ namespace IntelligentKioskSample.Views
             else
             {
                 this.lastDetectedFaceSample = e.DetectedFaces;
+                
             }
 
             // Compute Face Identification and Unique Face Ids
@@ -195,7 +203,7 @@ namespace IntelligentKioskSample.Views
             }
             else
             {
-                this.lastIdentifiedPersonSample = e.DetectedFaces.Select(f => new Tuple<Face, IdentifiedPerson>(f, e.IdentifiedPersons.FirstOrDefault(p => p.FaceId == f.FaceId)));
+                this.lastIdentifiedPersonSample = e.DetectedFaces.Select(f => new Tuple<Face, IdentifiedPerson>(f, e.IdentifiedPersons.FirstOrDefault(p => p.FaceId == f.FaceId)));                
             }
 
             if (!e.SimilarFaceMatches.Any())
@@ -205,7 +213,10 @@ namespace IntelligentKioskSample.Views
             else
             {
                 this.lastSimilarPersistedFaceSample = e.SimilarFaceMatches;
+                
             }
+
+            
 
             this.UpdateDemographics(e);
 
@@ -242,7 +253,7 @@ namespace IntelligentKioskSample.Views
             base.OnNavigatedTo(e);
         }
 
-        private void UpdateDemographics(ImageAnalyzer img)
+        private async Task UpdateDemographics(ImageAnalyzer img)
         {
             if (this.lastSimilarPersistedFaceSample != null)
             {
@@ -261,6 +272,7 @@ namespace IntelligentKioskSample.Views
 
                         visitor = new Visitor { UniqueId = item.SimilarPersistedFace.PersistedFaceId, Count = 1 };
                         this.visitors.Add(visitor.UniqueId, visitor);
+                        await this.SaveIdentifiedFace(img);
                         this.demographics.Visitors.Add(visitor);
 
                         // Update the demographics stats. We only do it for new visitors to avoid double counting. 

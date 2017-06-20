@@ -54,6 +54,44 @@ namespace IntelligentKioskSample
 {
     internal static class Util
     {
+        const string FACES_DIR = "Faces";
+
+        internal static async Task SaveBitmapToFileAsync(WriteableBitmap image)
+        {
+            StorageFolder pictureFolder = await ApplicationData.Current.LocalFolder.CreateFolderAsync(FACES_DIR, CreationCollisionOption.OpenIfExists);
+            var file = await pictureFolder.CreateFileAsync( DateTime.Now.Day.ToString()+"-"+DateTime.Now.Month.ToString() + "-" + DateTime.Now.Year.ToString() + "-" + DateTime.Now.Hour.ToString() + "_" + DateTime.Now.Minute.ToString() + "_" + DateTime.Now.Second.ToString()+".jpg", CreationCollisionOption.ReplaceExisting);            
+            using (var stream = await file.OpenStreamForWriteAsync())
+            {
+                BitmapEncoder encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.JpegEncoderId, stream.AsRandomAccessStream());
+                var pixelStream = image.PixelBuffer.AsStream();                
+                byte[] pixels = new byte[image.PixelBuffer.Length];
+
+                await pixelStream.ReadAsync(pixels, 0, pixels.Length);
+
+                encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Ignore, (uint)image.PixelWidth, (uint)image.PixelHeight, 96, 96, pixels);
+
+                await encoder.FlushAsync();
+            }
+        }       
+
+        internal static async Task<WriteableBitmap> FromStreamtoWritableBitmap(InMemoryRandomAccessStream stream)
+        {
+            WriteableBitmap writableBitmap = new WriteableBitmap(1, 1);
+            BitmapPixelFormat format = BitmapPixelFormat.Unknown;
+            writableBitmap = await WriteableBitmapExtensions.FromStream(writableBitmap, stream, format);            
+            return writableBitmap;
+        }       
+
+        internal static async Task<InMemoryRandomAccessStream> ConvertTo(byte[] arr)
+        {
+            InMemoryRandomAccessStream randomAccessStream = new InMemoryRandomAccessStream();
+            Stream stream = randomAccessStream.AsStream();
+            await stream.WriteAsync(arr, 0, arr.Length);
+            await stream.FlushAsync();
+
+            return randomAccessStream;
+        }
+        
         public static string CapitalizeString(string s)
         {
             return string.Join(" ", s.Split(' ').Select(word => !string.IsNullOrEmpty(word) ? char.ToUpper(word[0]) + word.Substring(1) : string.Empty));
@@ -168,26 +206,26 @@ namespace IntelligentKioskSample
             return pix.DetachPixelData();
         }
 
-		internal static async Task<byte[]> GetPixelBytesFromSoftwareBitmapAsync(SoftwareBitmap softwareBitmap)
-		{
-			using (InMemoryRandomAccessStream stream = new InMemoryRandomAccessStream())
-			{
-				BitmapEncoder encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.JpegEncoderId, stream);
-				encoder.SetSoftwareBitmap(softwareBitmap);
-				await encoder.FlushAsync();
+        internal static async Task<byte[]> GetPixelBytesFromSoftwareBitmapAsync(SoftwareBitmap softwareBitmap)
+        {
+            using (InMemoryRandomAccessStream stream = new InMemoryRandomAccessStream())
+            {
+                BitmapEncoder encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.JpegEncoderId, stream);
+                encoder.SetSoftwareBitmap(softwareBitmap);
+                await encoder.FlushAsync();
 
-				// Read the pixel bytes from the memory stream
-				using (var reader = new DataReader(stream.GetInputStreamAt(0)))
-				{
-					var bytes = new byte[stream.Size];
-					await reader.LoadAsync((uint)stream.Size);
-					reader.ReadBytes(bytes);
-					return bytes;
-				}
-			}
-		}
+                // Read the pixel bytes from the memory stream
+                using (var reader = new DataReader(stream.GetInputStreamAt(0)))
+                {
+                    var bytes = new byte[stream.Size];
+                    await reader.LoadAsync((uint)stream.Size);
+                    reader.ReadBytes(bytes);
+                    return bytes;
+                }
+            }
+        }
 
-		public static void AddRange<T>(this IList<T> list, IEnumerable<T> items)
+        public static void AddRange<T>(this IList<T> list, IEnumerable<T> items)
         {
             foreach (var item in items)
             {
